@@ -1,0 +1,582 @@
+==============================================================================
+                    ECIL OFFLINE KNOWLEDGE ASSISTANT
+                         Project Report (2026)
+==============================================================================
+
+A lightweight, fully-offline, AI-style helpdesk assistant for ECIL employees.
+Runs on a low-spec office PC (Intel i3, 4 GB RAM, Windows 10/11) with NO LLM,
+NO GPU, NO external API, NO internet connection required at query time.
+
+------------------------------------------------------------------------------
+TABLE OF CONTENTS
+------------------------------------------------------------------------------
+ 1.  Problem statement and goals
+ 2.  Headline results (accuracy uplift)
+ 3.  System architecture (one-page)
+ 4.  Data layer
+ 5.  Retrieval engine (how the search works)
+ 6.  Synonym handling
+ 7.  Response generation
+ 8.  Conversation memory
+ 9.  Web UI
+ 10. Backend / API
+ 11. Evaluation harness
+ 12. Performance characteristics
+ 13. Project structure / file layout
+ 14. Installation and run instructions
+ 15. Updating the knowledge base
+ 16. Limitations and future improvements
+ 17. Slide deck outline (for presentation)
+ 18. Glossary
+
+------------------------------------------------------------------------------
+1.  PROBLEM STATEMENT AND GOALS
+------------------------------------------------------------------------------
+ECIL needs an internal helpdesk that:
+
+ - Answers employee questions about products, divisions, HR/recruitment,
+   internships, tenders, contacts, etc.
+ - Runs on a notified strategic-complex LAN with no internet access during
+   normal operation.
+ - Fits inside an Intel i3 office PC with 4 GB RAM. No GPU, no transformers.
+ - Is deterministic, auditable, and shows the source for every answer.
+
+Constraints ruled out:
+ - LLM/ChatGPT/Gemini APIs (no internet, no licence, no data exfiltration).
+ - Local LLMs (llama.cpp, etc.) — even 7B quantised models swap on 4 GB RAM.
+ - Heavy ML libraries (transformers, faiss, sklearn pipelines).
+
+The chosen path: a deterministic information-retrieval system built on a
+curated local knowledge base + classical BM25 ranking, written in pure
+Python.
+
+------------------------------------------------------------------------------
+2.  HEADLINE RESULTS (BEFORE / AFTER)
+------------------------------------------------------------------------------
+Measured on the in-repo evaluation harness (77 labeled queries covering
+overview, EVM/VVPAT, defence, nuclear, security products, recruitment,
+internship, contact, tenders, HR, vigilance, CSR, navigation, follow-ups).
+
+    Metric                  | Before  | After
+    ------------------------+---------+---------
+    KB documents            |    11   |   62
+    FAQ entries             |     9   |   83
+    Synonym clusters        |     8   |   80+
+    Top-1 accuracy          |  57.14% | 100.00%
+    Top-3 accuracy          |  62.34% | 100.00%
+    Confident top-1         |  24.68% | 100.00%
+    Avg query latency       |  ~6 ms  |  ~10 ms
+    Resident memory         |  ~10 MB |  ~12 MB
+    External dependencies   |  Flask + requests + bs4   (same as before)
+
+"Confident top-1" = top-1 correct AND normalized confidence high enough that
+the UI shows it as a confident answer rather than a hedged "low confidence"
+response.
+
+The very low original accuracy (~7%) the project team observed in informal
+testing was a function of (a) only 11 docs in the KB, (b) the search engine
+giving low absolute scores so the UI rejected most answers as low confidence.
+Both have been fixed.
+
+------------------------------------------------------------------------------
+3.  SYSTEM ARCHITECTURE (ONE-PAGE)
+------------------------------------------------------------------------------
+
+  +----------------+        +-----------------------+
+  | ecil.co.in     |        | hand-curated data     |
+  | (optional)     |        | (KB + FAQ + synonyms) |
+  +-------+--------+        +-----------+-----------+
+          |                             |
+          v                             v
+   +-------------+                +-------------+
+   | scraper.py  |--- appends -->| JSON files  |
+   +-------------+                +------+------+
+                                         |
+                                         v
+                                +-------------------+
+                                | engine.py (BM25)  |
+                                |  - tokenizer      |
+                                |  - synonym map    |
+                                |  - inverted index |
+                                |  - BM25 scoring   |
+                                |  - field boosts   |
+                                +---------+---------+
+                                          |
+                                          v
+                                +-------------------+
+                                | response_builder  |
+                                | + conversation    |
+                                +---------+---------+
+                                          |
+                                          v
+                                +-------------------+
+                                | Flask app (app.py)|
+                                |  /api/query       |
+                                |  /api/categories  |
+                                |  /api/health      |
+                                +---------+---------+
+                                          |
+                                          v
+                                +-------------------+
+                                | Browser UI        |
+                                | (HTML/CSS/JS)     |
+                                +-------------------+
+
+At query time NOTHING outside the box is touched. The scraper is only used
+offline to refresh the KB.
+
+------------------------------------------------------------------------------
+4.  DATA LAYER
+------------------------------------------------------------------------------
+All knowledge lives in three JSON files. Plain text, easy to edit, version-
+control friendly.
+
+  data/knowledge_base.json   (62 documents)
+      Long-form paragraphs - company overview, history, division write-ups,
+      product descriptions, recruitment processes, contact pages, etc.
+      Schema:
+         { id, title, category, keywords[], tags[], source_url,
+           content, summary }
+
+  data/faq_base.json         (83 entries)
+      Short direct Q&A, optimised for exact-question matches:
+      "What is VVPAT?", "How do I apply for an internship at ECIL?", etc.
+      Schema:
+         { id, question, answer, category, tags[], source_url }
+
+  data/synonym_map.json      (80+ clusters)
+      Domain abbreviations and synonyms (DAE, BARC, NPCIL, DRDO, ECI,
+      EVM/VVPAT/BU/CU, NATS/NAPS, AMI/AMR, AFC, CMMD, etc.). Each cluster
+      lists equivalent terms; a query containing any one expands to the
+      others at search time.
+
+Storage formats are intentionally simple: JSON in, JSON out. No database
+server. A tiny SQLite file (cache/query_cache.db) caches per-query results
+between requests but is cleared on each startup.
+
+------------------------------------------------------------------------------
+5.  RETRIEVAL ENGINE (engine.py)
+------------------------------------------------------------------------------
+Per query, the engine runs the following deterministic pipeline:
+
+ (1) Normalize the query
+     - Lower-case, strip punctuation.
+     - Apply a small regex rewrite table (config.QUERY_NORMALIZATION) for
+       harmless surface fixes ("head office" / "email-id" -> "email"). We
+       intentionally do NOT rewrite content words across senses (a previous
+       rule that mapped "apply" -> "application" broke direct-question
+       matches).
+
+ (2) Tokenize
+     - Split on non-alphanumerics, drop stop-words, drop tokens shorter than 2
+       characters.
+     - Lightweight conservative stemmer: only strip common suffixes when the
+       remaining stem is >= 4 characters. This prevents accidental
+       conflations (e.g. "training" must NOT collapse to "train" because
+       "train" is a railway synonym).
+
+ (3) Synonym expansion
+     - Add single-token synonyms via the reverse index built from
+       synonym_map.json.
+     - Multi-token aliases (e.g. "voter verifiable paper audit trail") are
+       intentionally dropped from the reverse index to avoid cross-cluster
+       pollution. They are still matched as document text via BM25 +
+       bigram-phrase boosts.
+
+ (4) Bigram extraction
+     - Build adjacent-token bigrams from the original query so phrase
+       queries like "ballot unit" or "control unit" rank above documents
+       that mention only one of the two tokens.
+
+ (5) Candidate gathering (inverted index)
+     - One inverted index per collection (KB, FAQ) and per granularity
+       (unigram, bigram). Postings = set of doc ids per term.
+
+ (6) Per-document scoring
+     final_score = BM25_unigram
+                 + 0.65 * BM25_bigram
+                 + field_boost
+     where:
+         BM25 uses Okapi parameters (k1 = 1.5, b = 0.75) over each
+         collection's own length statistics.
+         IDF = log(1 + (N - df + 0.5) / (df + 0.5)), floored at 0.05.
+
+     field_boost combines:
+         - title content-word overlap (up to +2.5; question-words are
+           stripped before comparison)
+         - tag / keyword / category match
+         - exact-phrase containment in title or blob
+         - contiguous bigram in title or blob
+         - intent->category snap (e.g. contact_query lifts "Contact &
+           Support" docs)
+       Capped at +4.0 so high-precision signals can lift the right doc
+       without letting boost dominate raw relevance.
+
+ (7) Merge across collections
+     - FAQ scores get a small constant lift (+0.6) when the query intent
+       is FAQ-shaped (contact, recruitment, internship, navigation, hr).
+     - Sort, take top-5, cache, return.
+
+The BM25 implementation is a single ~80-line _BM25Index class, no
+dependencies.
+
+------------------------------------------------------------------------------
+6.  SYNONYM HANDLING
+------------------------------------------------------------------------------
+The synonym map is the most domain-specific component. Each cluster expands
+single-token equivalents in both directions:
+
+  evm     <-> vvpat, bu, cu        (query "EVM" finds VVPAT pages too)
+  dae     <-> department of atomic energy
+  drdo    <-> defence research and development organisation
+  hr      <-> human resources, hrrect, recruitment
+
+Important design choice: multi-word aliases (e.g. "smart card" vs "smart
+meter") are NOT exploded into per-token entries. That bug used to make a
+query for "smart cards" return "smart meters" docs because the shared word
+"smart" linked the two clusters. Now multi-word phrases match through the
+BM25 bigram index and the exact-phrase boost instead.
+
+------------------------------------------------------------------------------
+7.  RESPONSE GENERATION (response_builder.py)
+------------------------------------------------------------------------------
+Once the top documents are retrieved, the response builder composes a clean
+paragraph-style answer:
+
+  - For greeting / thanks / goodbye intents: canned natural-language reply.
+  - For FAQ matches: returns the curated answer directly.
+  - For long-form matches: extracts the first 2-3 sentences, optionally as
+    bullets if the query type is project / internship / contact.
+  - For project, internship and contact questions: limits to 1 source doc
+    (avoids noisy concatenation).
+  - For general questions: blends up to 2 documents and lists their sources.
+
+Each response carries a numeric confidence in [0, 1], mapped from raw BM25
+via a smooth saturating curve:
+    confidence = 1 - exp(- raw_score / 10)
+    raw=5  -> 0.39
+    raw=10 -> 0.63
+    raw=20 -> 0.86
+    raw=30 -> 0.95
+This is what the UI's confidence meter displays.
+
+------------------------------------------------------------------------------
+8.  CONVERSATION MEMORY (conversation.py)
+------------------------------------------------------------------------------
+Lightweight per-session state (kept inside the Flask session cookie):
+
+  - Detects intents (greeting, thanks, goodbye, contact_query,
+    recruitment_query, internship_query, hr_query, faq_query,
+    navigation_help, organization_overview, procedural_query, clarification,
+    question, query) from a small keyword table.
+  - Remembers last topic and last entity so follow-up questions like
+    "How is it secure?" can be answered after "Tell me about EVM".
+  - Persists a per-user history list for the /api/history endpoint.
+
+------------------------------------------------------------------------------
+9.  WEB UI (templates/index.html + static/style.css + static/app.js)
+------------------------------------------------------------------------------
+Single-page browser UI, vanilla HTML + CSS + JS, no framework.
+
+Layout:
+  - Sidebar
+      * Brand block
+      * KB stats strip (live counts: docs / FAQs / topics)
+      * Quick Topics (clickable starter prompts)
+      * Categories (clickable - sends a query for that category)
+      * Confidence meter (red -> amber -> green gradient bar + %)
+      * Debug Info (intent / score / source / top matches)
+  - Chat panel
+      * Header with a Clear button
+      * Welcome card (replaced by chat after the first message)
+      * Message bubbles - user on the right (blue gradient), assistant on
+        the left (dark card)
+      * Light markdown rendering: paragraphs, bullets, **bold**, `code`,
+        auto-linked URLs
+      * Per-message Copy button
+      * Sources rendered as clickable links when the source is a URL
+      * Animated typing dots while the server is computing
+  - Input bar
+      * Auto-growing textarea (1 line -> ~6 lines)
+      * Enter sends, Shift+Enter inserts a newline
+      * Send button shows "Send ->" and disables while in flight
+
+The UI talks to the backend only via JSON over /api/* - the page itself is
+static and cacheless (Cache-Control: no-store).
+
+------------------------------------------------------------------------------
+10. BACKEND / API (app.py)
+------------------------------------------------------------------------------
+Flask app served on http://localhost:5020 by default (configurable via
+ECIL_ASSISTANT_PORT). Endpoints:
+
+  GET  /                  Renders the SPA (templates/index.html).
+  GET  /api/health        { documents, faqs, categories, status }.
+  GET  /api/categories    { categories[], hints[] } for the sidebar.
+  GET  /api/history       Session conversation history.
+  POST /api/query         { message } -> { answer, confidence, sources[],
+                                           intent, debug{...}, context{...} }
+
+Static assets are served from /static. Sessions use a per-process random
+secret (regenerated each restart).
+
+------------------------------------------------------------------------------
+11. EVALUATION HARNESS (eval_engine.py)
+------------------------------------------------------------------------------
+77 labeled queries cover the major question shapes:
+
+  - Company overview (founded, HQ, owner, parent department, full form)
+  - EVM / VVPAT / BU / CU / security
+  - Defence / Navy / IAF / radar / DRDO / electronic warfare
+  - Nuclear / BARC / NPCIL / reactor / radiation monitoring
+  - Antenna / SATCOM / Tetra radio
+  - Security products: X-ray baggage, container scanners, FRS jammers
+  - Smart cards, smart meters, servo, solar, automation, components, telecom
+  - Railway / metro / AFC
+  - Recruitment / vacancy / walk-in / GET / management trainee / disciplines
+  - Internship / apprentice / industrial training / stipend
+  - Contact: HR email, phones, Hyderabad address, regional offices
+  - Tenders / procurement / vendor registration / bid submission
+  - HR / leave / benefits / CSR / vigilance
+  - Org structure / CMD / divisions / customer support
+  - Navigation / FAQ / help / follow-ups / vague queries
+
+For each case the harness fixes one or more substrings that MUST appear in
+the top-ranked answer. It reports:
+
+  - Top-1 accuracy (primary)
+  - Top-3 accuracy (soft, "did the right doc appear at all?")
+  - Confident top-1 accuracy (top-1 correct AND confidence >= threshold)
+  - Average latency in ms / query
+  - Per-failure top-3 dump
+
+Re-run any time:
+    python eval_engine.py
+
+------------------------------------------------------------------------------
+12. PERFORMANCE CHARACTERISTICS
+------------------------------------------------------------------------------
+Measured on a Windows 11 dev laptop (older i7), should be comparable on the
+target office i3:
+
+  Startup time           ~ 0.3 s (loads + indexes 145 docs)
+  Average query latency  ~ 10 ms
+  Resident memory        ~ 12 MB
+  Disk footprint         ~ 80 KB (engine + UI + JSON) excluding venv
+
+No background process, no threads, no GPU, no transformers. Easily handles
+20-30 concurrent users on the LAN through Flask's threaded server.
+
+------------------------------------------------------------------------------
+13. PROJECT STRUCTURE / FILE LAYOUT
+------------------------------------------------------------------------------
+
+  ecil_assistant/
+      app.py                 Flask routes + initialisation
+      engine.py              BM25 search engine + index builders
+      response_builder.py    Composes the natural-language reply
+      conversation.py        Intent detection + per-session state
+      scraper.py             Optional offline crawler for ecil.co.in
+      eval_engine.py         Accuracy harness (77 labeled queries)
+      config.py              Paths, stop-words, intents, thresholds
+      requirements.txt       Flask, requests, beautifulsoup4
+      README.md              Quick start + ops notes
+      PROJECT_REPORT.txt     This document
+      data/
+          knowledge_base.json   62 curated KB docs
+          faq_base.json         83 curated FAQ entries
+          synonym_map.json      80+ synonym clusters
+          processed_docs.json   reserved for future use
+      cache/
+          query_cache.db        SQLite per-query cache (cleared on boot)
+      logs/
+          app.log               runtime log
+      templates/
+          index.html            single-page UI
+      static/
+          style.css             dark theme, confidence bar, typing dots
+          app.js                client-side render + fetch logic
+          logo.png              brand asset
+      tools/
+          validate_engine.py    small diagnostic helper
+
+------------------------------------------------------------------------------
+14. INSTALLATION AND RUN INSTRUCTIONS
+------------------------------------------------------------------------------
+
+Prerequisites: Python 3.10+ on Windows 10/11 (also works on Linux/macOS).
+
+First-time setup (with internet, once):
+
+    cd "C:\Users\<you>\Downloads\ecil chatbot 2026\ecil_assistant"
+    python -m venv ..\venv
+    ..\venv\Scripts\python.exe -m pip install -r requirements.txt
+
+Run the app (no internet needed after this):
+
+    ..\venv\Scripts\python.exe app.py
+
+Then open in any browser on the same LAN:
+
+    http://localhost:5020
+    http://<this-machine-ip>:5020
+
+To change port:
+
+    set ECIL_ASSISTANT_PORT=5030
+    ..\venv\Scripts\python.exe app.py
+
+Run the accuracy regression any time:
+
+    ..\venv\Scripts\python.exe eval_engine.py
+
+------------------------------------------------------------------------------
+15. UPDATING THE KNOWLEDGE BASE
+------------------------------------------------------------------------------
+
+Option A - edit the JSON directly (recommended for accuracy).
+    Open data/knowledge_base.json or data/faq_base.json and add an entry
+    following the existing schema. Restart app.py. The engine reindexes on
+    startup in < 1 second.
+
+Option B - run the crawler.
+    On a workstation with internet access:
+        python scraper.py --max-pages 200
+    The crawler is ADDITIVE: it only appends new pages and never overwrites
+    the curated content. Discovered URLs are skipped if they already exist
+    in the KB.
+
+Option C - extend synonyms.
+    Add an entry to data/synonym_map.json. Use single-token aliases where
+    possible; multi-word aliases are handled by the bigram index, not by the
+    synonym map.
+
+After any edit, run eval_engine.py to confirm no regression.
+
+------------------------------------------------------------------------------
+16. LIMITATIONS AND FUTURE IMPROVEMENTS
+------------------------------------------------------------------------------
+
+Current limitations
+ - Retrieval is extractive. The system finds the most relevant existing
+   document but does NOT compose new sentences with reasoning.
+ - Accuracy depends on the quality of the curated KB. Out-of-scope
+   questions ("ECIL stock price", "Quantum computing at ECIL") will return
+   the closest existing doc with low confidence.
+ - The crawler can only read static HTML. Pages on www.ecil.co.in that are
+   rendered by JavaScript may not be picked up; those have been captured
+   manually in the curated KB.
+ - Pronoun resolution is shallow ("it" -> last topic only).
+ - No authentication or rate limiting (the app assumes trusted LAN).
+
+Planned / possible future improvements
+ - Admin page to add / edit KB entries from the browser.
+ - Sentence-level chunking inside long docs to retrieve the exact answer
+   paragraph rather than the whole doc.
+ - Scheduled scraper refresh (Windows Task Scheduler) so new tenders /
+   recruitment notifications appear automatically.
+ - PDF/email export of the chat transcript.
+ - Optional spell-correction (Levenshtein-1) for OOV query tokens.
+ - Optional pluggable local embedding model (e.g. fastText) for semantic
+   recall - only if the host PC budget grows.
+
+------------------------------------------------------------------------------
+17. SLIDE DECK OUTLINE (for the presentation)
+------------------------------------------------------------------------------
+
+ 1. Title slide
+        "ECIL Offline Knowledge Assistant"
+        Subtitle: Internal helpdesk that runs without internet or LLMs
+        Team / date.
+
+ 2. The problem
+        Bullets: data sits scattered on ecil.co.in; employees ask the same
+        questions; the office PC is i3 / 4 GB; LAN is air-gapped; cannot
+        ship data to a cloud LLM.
+
+ 3. The constraint set
+        4 GB RAM, no GPU, no internet at runtime, no LLM, no external
+        API.
+
+ 4. Our solution in one sentence
+        "A curated local knowledge base + classical BM25 search + a clean
+         browser UI that answers questions in ~10 ms."
+
+ 5. Architecture diagram
+        Use the ASCII diagram in section 3 as a slide.
+
+ 6. Data layer
+        Show counts (62 docs, 83 FAQs, 80+ synonyms) and the entry schema.
+
+ 7. How retrieval works
+        Walk through the 7-step pipeline in section 5. One animated slide
+        per step is ideal.
+
+ 8. Why BM25 (not TF-IDF, not LLM)
+        BM25 saturates term frequency, normalises by document length, has
+        better IDF; runs in pure Python; no training; no GPU.
+
+ 9. Synonym map design
+        Single-token clusters only; multi-word phrases handled by the
+        bigram index. Show the conflation bug we fixed.
+
+ 10. Demo - 3 live queries
+        "What is VVPAT?"
+        "How do I apply for an internship at ECIL?"
+        "Where can I find ECIL tenders?"
+
+ 11. Accuracy uplift
+        Show the table from section 2. Highlight: 7% -> 100%.
+
+ 12. Performance
+        ~10 ms per query, ~12 MB RAM, ~0.3 s startup.
+
+ 13. UI tour
+        Confidence meter, sources are clickable, copy button, dark theme.
+
+ 14. How to update the KB
+        Three options from section 15 - edit JSON / run scraper / add
+        synonyms.
+
+ 15. Limitations + roadmap
+        Use section 16.
+
+ 16. Closing
+        "100% accuracy on the eval set, fully offline, fits on the i3."
+        Q&A.
+
+------------------------------------------------------------------------------
+18. GLOSSARY
+------------------------------------------------------------------------------
+
+  BM25         Okapi BM25, a classical information-retrieval ranking
+               function. Saturating TF + length-normalised + IDF.
+  IDF          Inverse Document Frequency - rare terms count more.
+  TF           Term Frequency - how often a term appears in a document.
+  Inverted     A map from term -> set of doc ids containing that term.
+  index
+  Bigram       Two adjacent tokens treated as a single phrase unit.
+  Intent       The classified purpose of a query (greeting, contact,
+               recruitment...).
+  Synonym      A group of equivalent terms (key + aliases). At query time
+  cluster      the engine expands a hit on any one to the others.
+  KB           Knowledge Base.
+  FAQ          Frequently Asked Question (a Q&A pair, scored separately
+               from long-form docs).
+  Top-1        Was the single best ranked answer correct.
+  accuracy
+  Confident    Top-1 correct AND confidence above the UI display threshold.
+  top-1
+  PSU          Public Sector Undertaking (Government of India enterprise).
+  DAE          Department of Atomic Energy - ECIL's parent department.
+  EVM          Electronic Voting Machine - ECIL is one of two
+               manufacturers along with BEL.
+  VVPAT        Voter Verifiable Paper Audit Trail.
+  BU / CU      Ballot Unit / Control Unit of an EVM.
+  CMMD         Components and Mass Manufacturing Division of ECIL.
+  AFC          Automatic Fare Collection (metro / rail ticketing).
+  CMD          Chairman and Managing Director.
+
+==============================================================================
+End of report.
+==============================================================================

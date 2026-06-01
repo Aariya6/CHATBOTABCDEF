@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>ECIL Knowledge Assistant</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ ASSET_VERSION }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">EC</div>
+        <div>
+          <h1>ECIL Helpdesk</h1>
+          <span>Offline knowledge assistant</span>
+        </div>
+      </div>
+
+      <div class="kb-stats" id="kbStats">
+        <div class="stat"><span class="stat-num" id="statDocs">--</span><span class="stat-lbl">KB&nbsp;docs</span></div>
+        <div class="stat"><span class="stat-num" id="statFaqs">--</span><span class="stat-lbl">FAQs</span></div>
+        <div class="stat"><span class="stat-num" id="statCats">--</span><span class="stat-lbl">topics</span></div>
+      </div>
+
+      <section class="sidebar-section">
+        <h2>Quick Topics</h2>
+        <div class="quick-buttons" id="quickButtons"></div>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>Categories</h2>
+        <ul id="categoryList" class="category-list"></ul>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>Confidence</h2>
+        <div class="confidence-panel">
+          <div class="confidence-bar"><div class="confidence-fill" id="confidenceFill"></div></div>
+          <div class="confidence-meta">
+            <span class="confidence-score" id="confidenceScore">--</span>
+            <span class="confidence-label" id="confidenceLabel">awaiting query</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="sidebar-section debug-section">
+        <h2>Debug Info</h2>
+        <div class="debug-item"><strong>Intent:</strong> <span id="debugIntent">--</span></div>
+        <div class="debug-item"><strong>Score:</strong> <span id="debugScore">--</span></div>
+        <div class="debug-item"><strong>Source:</strong> <span id="debugSource">--</span></div>
+        <div class="debug-item"><strong>Matches:</strong> <span id="debugMatches">--</span></div>
+      </section>
+    </aside>
+
+    <main class="chat-panel">
+      <header class="chat-header">
+        <div>
+          <h2>ECIL Knowledge Assistant</h2>
+          <p>Ask about ECIL divisions, products, services, careers, tenders or contacts. Runs fully offline from local data.</p>
+        </div>
+        <button id="clearChatBtn" class="button-secondary" title="Clear conversation">Clear</button>
+      </header>
+
+      <section class="chat-window" id="chatWindow">
+        <div class="welcome-card">
+          <h3>Hi! I'm the ECIL internal helpdesk assistant.</h3>
+          <p>I retrieve information from a curated local knowledge base of ECIL products, divisions, contact details, recruitment, internships, tenders and more. No internet needed.</p>
+          <p class="welcome-hint">Try one of the quick topics in the sidebar, or type a question below.</p>
+        </div>
+      </section>
+
+      <footer class="chat-input-panel">
+        <textarea id="chatInput" placeholder="Type your question and press Enter..." rows="1"></textarea>
+        <button id="sendBtn" class="button-primary" aria-label="Send message">
+          <span class="send-label">Send</span>
+          <span class="send-icon" aria-hidden="true">&rarr;</span>
+        </button>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/static/app.js?v={{ ASSET_VERSION }}"></script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+{
+  "high_confidence_topics": [
+    {
+      "id": "hc-nuclear-001",
+      "topic": "ECIL Nuclear Systems",
+      "questions": [
+        "What nuclear instrumentation does ECIL supply?",
+        "What is reactor control and instrumentation?",
+        "Does ECIL supply to NPCIL?",
+        "What is radiation monitoring?",
+        "Does ECIL make nuclear safety systems?"
+      ],
+      "consolidated_answer": "ECIL is the principal supplier of nuclear instrumentation and control systems to NPCIL nuclear power plants and research reactors at BARC and IGCAR. Products include: (1) Reactor Instrumentation & Control (RIC) systems for neutron flux measurement and reactor shutdown; (2) Radiation monitoring systems including area gamma monitors, personnel dosimeters, environmental monitors; (3) Control & Instrumentation systems for fuel handling, waste management and containment; (4) Automated SCADA systems for reactor operation. All products are engineered for high reliability and meet stringent nuclear safety standards. ECIL's nuclear division has supplied over 20 reactors and continues to modernize instrumentation for aging plants.",
+      "confidence": "very_high",
+      "category": "Nuclear Systems",
+      "tags": ["nuclear", "NPCIL", "reactor", "instrumentation"]
+    },
+    {
+      "id": "hc-defense-001",
+      "topic": "ECIL Defence Electronics",
+      "questions": [
+        "What defence products does ECIL make?",
+        "Does ECIL work with Indian military?",
+        "What communication systems for defence?",
+        "Does ECIL make missile systems?",
+        "What is electronic warfare?"
+      ],
+      "consolidated_answer": "ECIL's Strategic Electronics Division is a core defence electronics supplier to Indian Armed Forces (Army, Navy, Air Force), Coast Guard, DRDO and paramilitary services. Major product lines: (1) Secure communications: HF/VHF/UHF radios, encrypted tactical communication systems, software-defined radios (SDR); (2) Electronic Warfare (EW): COMINT systems, threat warning receivers, electronic jamming/countermeasures; (3) Radar & C4I: Command centers for weapon systems like Akash and BrahMos, integrated C4I platforms; (4) Sonar electronics: Underwater surveillance systems for naval vessels; (5) Fuzes: Smart fuzes for missiles and artillery. Most systems are indigenized under Make-in-India with DRDO under DAP Make-I and Make-II protocols. ECIL also supplies to select strategic partners in friendly nations.",
+      "confidence": "very_high",
+      "category": "Defense Electronics",
+      "tags": ["defence", "DRDO", "military", "communications", "warfare"]
+    },
+    {
+      "id": "hc-evm-001",
+      "topic": "Electronic Voting Machines (EVMs)",
+      "questions": [
+        "How do EVMs work?",
+        "Are EVMs secure and tamper-proof?",
+        "What is VVPAT?",
+        "Who manufactures EVMs in India?",
+        "Can EVMs be hacked?"
+      ],
+      "consolidated_answer": "ECIL's EVMs are the voting systems used by the Election Commission of India. Architecture: (1) Ballot Unit (BU): Voter interface with 16 candidate buttons per unit, can be linked for 384 candidates; (2) Control Unit (CU): Operated by polling officer, releases votes, stores totals, controls voting session; (3) VVPAT (Voter Verifiable Paper Audit Trail): Prints paper slip with selected candidate name and symbol for voter verification. Security features: EVMs are standalone (no network/internet), one-time programmable firmware locked after manufacture, encrypted pairing between BU/CU/VVPAT using dynamic codes, tamper-detect mechanical seals, encased in metal housing. Verification: VVPAT enables voter to verify their vote was recorded correctly. Election Commission conducts First Level Checks and mock polls before elections. Paper slips can be hand-counted for independent verification. Only two manufacturers supply Election Commission: ECIL and BEL. Penetration testing by independent security labs has found no practical way to remotely change results on a properly sealed EVM.",
+      "confidence": "very_high",
+      "category": "Products - EVM",
+      "tags": ["EVM", "voting", "security", "VVPAT", "election"]
+    },
+    {
+      "id": "hc-satcom-001",
+      "topic": "Satellite Communication Systems",
+      "questions": [
+        "What is VSAT?",
+        "Does ECIL make earth stations?",
+        "What is satellite communication?",
+        "What are INSAT ground stations?",
+        "Does ECIL design satellite ground systems?"
+      ],
+      "consolidated_answer": "ECIL's Antenna & Aerospace Vertical designs complete SATCOM solutions. Products: (1) Earth Stations: INSAT/GSAT earth stations for national broadcast networks, meteorological data reception, satellite operations; (2) VSAT (Very Small Aperture Terminal): Portable satellite communication terminals for remote connectivity in defence, disaster management, broadcast backhaul; (3) Antennas: Parabolic reflectors, array antennas, microwave horns, feed systems from VHF to Ku-band; (4) RF Sub-systems: Converters, modems, amplifiers, waveguide components; (5) Tracking Systems: Motorized antenna systems with GPS and satellite tracking for moving platforms. Applications: Defence operations, airborne platforms, maritime vessels, emergency communications, broadcasting. ECIL has supplied systems to ISRO space missions including deep-space tracking for Chandrayaan and Mangalyaan probes.",
+      "confidence": "very_high",
+      "category": "Products - Satcom",
+      "tags": ["VSAT", "satellite", "antenna", "earth station", "ISRO"]
+    },
+    {
+      "id": "hc-org-001",
+      "topic": "ECIL Organization & Structure",
+      "questions": [
+        "How is ECIL organized?",
+        "What is a Strategic Business Unit?",
+        "What are ECIL's verticals?",
+        "What divisions does ECIL have?",
+        "How many employees does ECIL have?"
+      ],
+      "consolidated_answer": "ECIL (Electronics Corporation of India Limited) is organized as a multi-divisional Government of India public sector enterprise under the Department of Atomic Energy. Organizational structure: ECIL operates through five Strategic Business Verticals: (1) Nuclear Instrumentation & Control: Supplies to NPCIL, BARC, IGCAR; (2) Defence Electronics: Supplies to Armed Forces and DRDO; (3) Aerospace & Satcom: Space systems, satellite ground stations; (4) Homeland Security Solutions: X-ray scanners, surveillance, IoT; (5) IT & e-Governance: Digital solutions, smart metering. Supporting divisions: Components & Mass Manufacturing (CMMD), Servo Systems, Telecom, Solar PV, Customer Support & Training. ECIL has a workforce of over 7,000 employees including engineers, technicians and support staff. Manufacturing locations: Hyderabad HQ (Kushaiguda), Bangalore, Faridabad and regional offices across India. Board of Directors oversees strategy; Day-to-day operations managed by CMD (Chief Managing Director) and divisional heads.",
+      "confidence": "very_high",
+      "category": "Organizational Structure",
+      "tags": ["organization", "structure", "divisions", "verticals"]
+    },
+    {
+      "id": "hc-quality-001",
+      "topic": "ECIL Quality & Certifications",
+      "questions": [
+        "What quality certifications does ECIL have?",
+        "Is ECIL ISO certified?",
+        "What is QMS?",
+        "Does ECIL follow quality standards?",
+        "What are ECIL management systems?"
+      ],
+      "consolidated_answer": "ECIL maintains comprehensive quality and management systems across all divisions. Certifications: (1) ISO 9001: Quality Management System certification across all divisions; (2) ISO 14001: Environmental Management System for sustainable operations; (3) ISO 45001: Occupational Health & Safety Management; (4) ISO 27001: Information Security Management for data protection; (5) AS9100: Aerospace quality standard for aerospace division; (6) NADCAP: National Aerospace and Defence Contractors Accreditation Program. Additional systems: Safety, Health & Environmental (SHE) Management System ensures workplace safety and environmental compliance. ISMS (Information Security Management System) protects against cyber threats. Processes: ECIL follows Design Control, Configuration Management, Change Management and Supply Chain Quality procedures. Audits: Regular internal and external audits by certification bodies. The quality approach ensures all ECIL products meet customer requirements and regulatory standards for defence, nuclear, aerospace and civil applications.",
+      "confidence": "very_high",
+      "category": "Quality & Certifications",
+      "tags": ["ISO", "certification", "quality", "compliance"]
+    },
+    {
+      "id": "hc-recruitment-001",
+      "topic": "ECIL Recruitment & HR",
+      "questions": [
+        "Does ECIL recruit freshers?",
+        "What is the ECIL recruitment process?",
+        "Does ECIL have internship programs?",
+        "How to apply for ECIL jobs?",
+        "What positions does ECIL hire?"
+      ],
+      "consolidated_answer": "ECIL regularly recruits fresh engineers and experienced professionals. Recruitment process: ECIL publishes job openings on www.ecil.co.in and other employment portals. For freshers: Recruitment is done through campus drives at engineering colleges. Selection involves: Written test (technical/aptitude), group discussion, technical interview, HR interview. For experienced: Direct applications, technical evaluation, interviews. Positions: ECIL hires Graduate Trainees (GET) in Electronics, Electrical, Mechanical, Computer Science, Civil engineering. Advanced Graduate Trainees (AGT) for Master's degree holders. Specialist positions: Design engineers, RF engineers, software engineers, embedded systems engineers. Internship programs: ECIL offers industrial training internships (ITI/Polytechnic), final-year engineering internships, summer internships at divisional locations. Training period: Graduate Trainees undergo 3-month comprehensive technical training at ECIL's training centers. ECIL offers competitive salaries, job security, pension, medical benefits and career growth opportunities. Regular walk-in drives are conducted in major cities. Interested candidates should monitor ECIL website and submit applications online through the recruitment portal.",
+      "confidence": "very_high",
+      "category": "Recruitment",
+      "tags": ["recruitment", "job", "freshers", "internship", "hiring"]
+    }
+  ],
+  "domain_keywords": {
+    "nuclear": ["reactor", "instrumentation", "control", "radiation", "monitoring", "npcil", "barc"],
+    "defense": ["military", "drdo", "armed forces", "weapons", "warfare", "secure", "communications"],
+    "evm": ["voting", "ballot", "control unit", "vvpat", "election", "secure", "tamper"],
+    "satcom": ["satellite", "vsat", "earth station", "antenna", "space", "isro"],
+    "quality": ["iso", "certification", "compliance", "standard", "management"],
+    "recruitment": ["job", "fresher", "internship", "training", "hire", "application"]
+  }
+}
