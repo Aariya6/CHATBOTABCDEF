@@ -18,10 +18,11 @@ import re
 import time
 from collections import deque
 from typing import Dict, List, Optional, Set
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 
 import config
 
@@ -29,89 +30,27 @@ import config
 DATA_DIR = config.DATA_FOLDER
 KB_PATH = config.KNOWLEDGE_BASE_PATH
 FAQ_PATH = config.FAQ_BASE_PATH
+SITEMAP_URL = f"{config.SITE_ROOT.rstrip('/')}/sitemap.xml"
 
-# Seed URLs: structured to cover the main sections of www.ecil.co.in even
-# when the home page's nav uses JavaScript (which `requests` cannot run).
-# ENHANCED: Now includes additional pages for news, awards, research, training,
-# quality certifications, sustainability, and detailed technical content.
+# Minimal fallback seed URLs. When the live sitemap is available, the crawler
+# will use it instead and avoid outdated hard-coded paths.
 SEED_URLS: List[str] = [
     "https://www.ecil.co.in/",
-    "https://www.ecil.co.in/about-us",
-    "https://www.ecil.co.in/about-us/history",
-    "https://www.ecil.co.in/about-us/leadership",
-    "https://www.ecil.co.in/about-us/vision-mission",
-    "https://www.ecil.co.in/divisions",
-    "https://www.ecil.co.in/divisions/defense",
-    "https://www.ecil.co.in/divisions/nuclear",
-    "https://www.ecil.co.in/divisions/communications",
-    "https://www.ecil.co.in/divisions/customer-support",
-    "https://www.ecil.co.in/divisions/components",
-    "https://www.ecil.co.in/divisions/telecom",
-    "https://www.ecil.co.in/products",
-    "https://www.ecil.co.in/products/evm",
-    "https://www.ecil.co.in/products/antenna",
-    "https://www.ecil.co.in/products/satcom",
-    "https://www.ecil.co.in/products/security",
-    "https://www.ecil.co.in/products/smartcard",
-    "https://www.ecil.co.in/products/smartmeter",
-    "https://www.ecil.co.in/products/railway",
-    "https://www.ecil.co.in/products/automation",
-    "https://www.ecil.co.in/products/solar",
-    "https://www.ecil.co.in/products/servo",
-    "https://www.ecil.co.in/products/computers",
-    "https://www.ecil.co.in/products/instruments",
-    "https://www.ecil.co.in/services",
-    "https://www.ecil.co.in/careers",
-    "https://www.ecil.co.in/tenders",
-    "https://www.ecil.co.in/rti",
-    "https://www.ecil.co.in/vigilance",
-    "https://www.ecil.co.in/csr",
-    "https://www.ecil.co.in/contact-us",
     "https://www.ecil.co.in/sitemap",
-    # ENHANCED SEED URLS: Additional sections for deeper content coverage
-    "https://www.ecil.co.in/news",
-    "https://www.ecil.co.in/press",
-    "https://www.ecil.co.in/media",
-    "https://www.ecil.co.in/awards",
-    "https://www.ecil.co.in/achievements",
-    "https://www.ecil.co.in/research",
-    "https://www.ecil.co.in/innovation",
-    "https://www.ecil.co.in/training",
+    "https://www.ecil.co.in/about",
+    "https://www.ecil.co.in/tenders",
     "https://www.ecil.co.in/quality",
-    "https://www.ecil.co.in/certifications",
-    "https://www.ecil.co.in/iso",
-    "https://www.ecil.co.in/sustainability",
-    "https://www.ecil.co.in/environment",
-    "https://www.ecil.co.in/policies",
-    "https://www.ecil.co.in/procurement",
-    "https://www.ecil.co.in/suppliers",
-    "https://www.ecil.co.in/clients",
-    "https://www.ecil.co.in/case-studies",
-    "https://www.ecil.co.in/projects",
-    "https://www.ecil.co.in/portfolio",
-    "https://www.ecil.co.in/technical",
-    "https://www.ecil.co.in/documentation",
-    "https://www.ecil.co.in/downloads",
-    "https://www.ecil.co.in/specifications",
-    "https://www.ecil.co.in/datasheet",
-    "https://www.ecil.co.in/brochure",
-    "https://www.ecil.co.in/annual-report",
-    "https://www.ecil.co.in/financial",
-    "https://www.ecil.co.in/annual-reports",
-    "https://www.ecil.co.in/hr",
-    "https://www.ecil.co.in/recruitment",
-    "https://www.ecil.co.in/freshers",
-    "https://www.ecil.co.in/internship",
-    "https://www.ecil.co.in/job-vacancies",
-    "https://www.ecil.co.in/grievance",
-    "https://www.ecil.co.in/faq",
-    "https://www.ecil.co.in/faqs",
-    "https://www.ecil.co.in/help",
-    "https://www.ecil.co.in/support",
-    "https://www.ecil.co.in/customer-care",
-    "https://www.ecil.co.in/service-centers",
-    "https://www.ecil.co.in/dealers",
-    "https://www.ecil.co.in/distributors",
+    "https://www.ecil.co.in/awards",
+    "https://www.ecil.co.in/rnd",
+    "https://www.ecil.co.in/nuclear",
+    "https://www.ecil.co.in/defence",
+    "https://www.ecil.co.in/aerospace",
+    "https://www.ecil.co.in/hss",
+    "https://www.ecil.co.in/iteg",
+    "https://www.ecil.co.in/manfgunits",
+    "https://www.ecil.co.in/verticals",
+    "https://www.ecil.co.in/jointventures",
+    "https://www.ecil.co.in/org_setup",
 ]
 
 
@@ -141,6 +80,31 @@ def clean_text(text: Optional[str]) -> str:
     return text
 
 
+def _parse_sitemap(xml: str) -> List[str]:
+    root = ET.fromstring(xml)
+    urls: List[str] = []
+    for loc in root.findall('.//{http://www.sitemaps.org/schemas/sitemap/0.9}loc'):
+        candidate = clean_text(loc.text or "")
+        normalized = normalize_url(config.SITE_ROOT, candidate)
+        if normalized:
+            urls.append(normalized)
+    return urls
+
+
+def load_sitemap_urls() -> List[str]:
+    try:
+        resp = requests.get(SITEMAP_URL, timeout=config.REQUEST_TIMEOUT,
+                            headers={"User-Agent": config.USER_AGENT})
+        resp.raise_for_status()
+        urls = _parse_sitemap(resp.text)
+        if urls:
+            print(f"[scraper] loaded {len(urls)} sitemap URLs from {SITEMAP_URL}")
+            return urls
+    except requests.RequestException as exc:
+        print(f"[scraper] sitemap load failed: {exc}")
+    return []
+
+
 # ---------------------------------------------------------------------------
 # URL helpers
 # ---------------------------------------------------------------------------
@@ -153,12 +117,21 @@ def normalize_url(base: str, link: str) -> Optional[str]:
         return None
     if any(pat in link.lower() for pat in config.URL_IGNORE_PATTERNS):
         return None
-    parsed = urlparse(link)
+
     site_host = urlparse(config.SITE_ROOT).netloc
-    if parsed.scheme and parsed.netloc and parsed.netloc != site_host:
+    parsed = urlparse(link)
+    if parsed.scheme and parsed.netloc:
+        if parsed.netloc.lower() != site_host:
+            return None
+        absolute = link
+    else:
+        absolute = urljoin(base, link.split("#")[0])
+
+    parsed2 = urlparse(absolute)
+    if parsed2.netloc.lower() != site_host:
         return None
-    absolute = urljoin(base, link.split("#")[0]).rstrip("/")
-    return absolute or None
+    normalized = urlunparse(parsed2._replace(scheme="https", fragment=""))
+    return normalized.rstrip("/")
 
 
 # ---------------------------------------------------------------------------
@@ -265,17 +238,23 @@ def extract_page(html: str, url: str) -> Optional[Dict]:
 # Crawler
 # ---------------------------------------------------------------------------
 
-def crawl(max_pages: int, polite_delay: float = 0.4, timeout: int = None) -> List[Dict]:
+def crawl(max_pages: int, polite_delay: float = 0.4, timeout: int = None, reset: bool = False) -> List[Dict]:
     timeout = timeout or config.REQUEST_TIMEOUT
     session = requests.Session()
     session.headers.update({"User-Agent": config.USER_AGENT})
 
+    if reset and os.path.exists(KB_PATH):
+        os.remove(KB_PATH)
+        print(f"[scraper] reset: removed old knowledge base {KB_PATH}")
+
     existing = load_json(KB_PATH, [])
     existing_urls: Set[str] = {
-        (doc.get("source_url") or "").rstrip("/") for doc in existing
+        normalize_url(config.SITE_ROOT, (doc.get("source_url") or "")) or ""
+        for doc in existing
     }
 
-    queue = deque(SEED_URLS)
+    seeds = load_sitemap_urls() or SEED_URLS
+    queue = deque(seeds)
     visited: Set[str] = set()
     new_docs: List[Dict] = []
 
@@ -334,8 +313,10 @@ def main(argv=None) -> int:
     parser.add_argument("--max-pages", type=int, default=config.MAX_CRAWL_PAGES)
     parser.add_argument("--delay", type=float, default=0.4,
                         help="Polite delay between fetches (seconds).")
+    parser.add_argument("--reset", action="store_true",
+                        help="Reset the knowledge base and rebuild from the live sitemap.")
     args = parser.parse_args(argv)
-    crawl(max_pages=args.max_pages, polite_delay=args.delay)
+    crawl(max_pages=args.max_pages, polite_delay=args.delay, reset=args.reset)
     return 0
 
 

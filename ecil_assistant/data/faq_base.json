@@ -1,43 +1,5 @@
 [
   {
-    "id": "faq-1",
-    "question": "What is ECIL?",
-    "answer": "ECIL stands for Electronics Corporation of India Limited. It is a Government of India public sector enterprise under the Department of Atomic Energy (DAE), headquartered at Kushaiguda, Hyderabad. ECIL designs and manufactures electronics for atomic energy, defence, security, communications, and elections (EVMs).",
-    "category": "ECIL Overview",
-    "tags": [
-      "ECIL",
-      "overview",
-      "full form",
-      "public sector"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-2",
-    "question": "What is the full form of ECIL?",
-    "answer": "ECIL = Electronics Corporation of India Limited.",
-    "category": "ECIL Overview",
-    "tags": [
-      "full form",
-      "abbreviation",
-      "ECIL"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-3",
-    "question": "When was ECIL founded?",
-    "answer": "ECIL was founded in 1967 (incorporated on 11 April 1967) under the Department of Atomic Energy, Government of India.",
-    "category": "Company History",
-    "tags": [
-      "history",
-      "founded",
-      "1967",
-      "incorporation"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
     "id": "faq-4",
     "question": "Where is the ECIL head office or headquarters located?",
     "answer": "The ECIL head office is at ECIL Post, Kushaiguda, Hyderabad - 500062, Telangana, India. Board lines: 040-27120131, 040-27182470 and 040-27182471.",
@@ -50,45 +12,6 @@
       "kushaiguda"
     ],
     "source_url": "https://www.ecil.co.in/contact-us"
-  },
-  {
-    "id": "faq-5",
-    "question": "Who owns ECIL?",
-    "answer": "ECIL is wholly owned by the Government of India and operates under the administrative control of the Department of Atomic Energy (DAE).",
-    "category": "ECIL Overview",
-    "tags": [
-      "ownership",
-      "government",
-      "DAE",
-      "PSU"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-6",
-    "question": "Which ministry or department does ECIL come under?",
-    "answer": "ECIL functions under the Department of Atomic Energy (DAE), Government of India. DAE is the parent department for ECIL.",
-    "category": "Organizational Structure",
-    "tags": [
-      "DAE",
-      "atomic energy",
-      "ministry",
-      "parent department"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-7",
-    "question": "What are the main business domains of ECIL?",
-    "answer": "ECIL works across defence electronics, nuclear instrumentation and reactor control, communication and SATCOM systems, antennas, security products (X-ray baggage scanners, container scanners, FRS jammers), electronic voting machines (EVMs), smart cards, smart meters, servo systems, telecom, broadcast and solar PV.",
-    "category": "ECIL Overview",
-    "tags": [
-      "domains",
-      "verticals",
-      "business",
-      "products"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
   },
   {
     "id": "faq-8",
@@ -625,92 +548,6 @@
     "source_url": "https://www.ecil.co.in/csr"
   },
   {
-    "id": "faq-50",
-    "question": "Who heads ECIL? Who is the CMD?",
-    "answer": "ECIL is headed by a Chairman and Managing Director (CMD) appointed by the Government of India through the Public Enterprises Selection Board (PESB) and the Department of Atomic Energy. The current CMD's name and bio are on the Leadership section of www.ecil.co.in.",
-    "category": "Organizational Structure",
-    "tags": [
-      "CMD",
-      "chairman",
-      "managing director",
-      "leadership"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us/leadership"
-  },
-  {
-    "id": "faq-51",
-    "question": "What is the ECIL Board of Directors?",
-    "answer": "The ECIL Board consists of the Chairman & Managing Director, functional directors (such as Director - Technical, Director - Personnel), DAE government nominee directors and independent directors. Names and tenures are listed in the Leadership section of the official website and in the Annual Report.",
-    "category": "Organizational Structure",
-    "tags": [
-      "board",
-      "directors",
-      "governance"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us/leadership"
-  },
-  {
-    "id": "faq-52",
-    "question": "How can I download the ECIL Annual Report?",
-    "answer": "ECIL Annual Reports are published each financial year and can be downloaded from the Investor / About Us section of www.ecil.co.in. They cover financial statements, division-wise performance, CSR, vigilance and corporate governance disclosures.",
-    "category": "ECIL Overview",
-    "tags": [
-      "annual report",
-      "financial",
-      "download"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-53",
-    "question": "Is ECIL ISO certified?",
-    "answer": "Yes. ECIL divisions are certified to ISO 9001 (Quality), ISO 14001 (Environment), ISO 45001 / OHSAS 18001 (OH&S) and ISO 27001 (Information Security). Defence and aerospace relevant divisions also hold AS9100 certification.",
-    "category": "Organizational Structure",
-    "tags": [
-      "ISO",
-      "certification",
-      "quality"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-54",
-    "question": "What is the role of ECIL in Make-in-India?",
-    "answer": "ECIL is a Defence PSU partner under the Make-in-India and Atmanirbhar Bharat programmes and has indigenised many strategic systems previously imported - including radiation monitoring instruments, nuclear instrumentation, secure communications, antenna sub-systems and container scanners.",
-    "category": "ECIL Overview",
-    "tags": [
-      "make in india",
-      "atmanirbhar",
-      "indigenous"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-55",
-    "question": "Some indigenous firsts of ECIL?",
-    "answer": "ECIL pioneered several Indian firsts: the TDC-12 indigenous digital computer in the early 1970s, the first solid-state TV receivers in India, the first indigenous Electronic Voting Machine for the Election Commission of India, reactor regulation systems for India's PHWR program, and indigenous container scanners for Indian customs.",
-    "category": "Company History",
-    "tags": [
-      "first",
-      "indigenous",
-      "TDC-12",
-      "milestone"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
-    "id": "faq-56",
-    "question": "Does ECIL have a subsidiary?",
-    "answer": "Yes. ECIL Rapiscan Limited (ERL) is an ECIL subsidiary / joint venture set up to manufacture and market X-ray baggage and parcel inspection systems and other security screening equipment for the Indian market.",
-    "category": "Organizational Structure",
-    "tags": [
-      "subsidiary",
-      "ECIL Rapiscan",
-      "ERL"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
     "id": "faq-57",
     "question": "What is ECIL X-Roads?",
     "answer": "'ECIL X-Roads' is a well-known traffic junction and bus terminus in Kushaiguda, Hyderabad, named after ECIL because the company's main complex is located close by. It is a TSRTC bus terminus and a convenient landmark for reaching the ECIL Hyderabad complex.",
@@ -807,17 +644,6 @@
       "support"
     ],
     "source_url": "https://www.ecil.co.in/divisions/customer-support"
-  },
-  {
-    "id": "faq-64",
-    "question": "Who are the major customers of ECIL?",
-    "answer": "Major ECIL customers include DAE units (BARC, NPCIL, IGCAR, NFC, IREL, HWB), the three armed forces, DRDO, ISRO, the Election Commission of India, the Ministry of Home Affairs, Customs (CBIC), paramilitary forces, state police, DISCOMs, Indian Railways and metro corporations, All India Radio, Doordarshan and various central / state government departments.",
-    "category": "Organizational Structure",
-    "tags": [
-      "customers",
-      "clients"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
   },
   {
     "id": "faq-65",
@@ -917,18 +743,6 @@
     "source_url": "https://www.ecil.co.in/careers"
   },
   {
-    "id": "faq-73",
-    "question": "What kind of training does ECIL give its employees?",
-    "answer": "ECIL runs technical training (RF, embedded systems, nuclear instrumentation, project management, quality), behavioural training, leadership development programmes, and mandatory training in vigilance, safety and information security through its in-house Learning & Development centre.",
-    "category": "HR Information",
-    "tags": [
-      "training",
-      "L&D",
-      "employee"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
     "id": "faq-74",
     "question": "Does ECIL build broadcast and TV transmitters?",
     "answer": "Yes. ECIL has supplied FM transmitters, TV transmitters, studio equipment, microwave links and digital terrestrial broadcasting systems to All India Radio (AIR), Doordarshan and other broadcasters, including support for digital migration.",
@@ -992,17 +806,6 @@
     "source_url": "https://www.ecil.co.in/contact-us"
   },
   {
-    "id": "faq-79",
-    "question": "What awards has ECIL received?",
-    "answer": "ECIL has received recognitions including Raksha Mantri's Awards for excellence in indigenisation, SCOPE awards for public sector excellence, departmental awards from DAE for contributions to atomic energy programmes, plus recognitions for CSR, MSME engagement and energy conservation. Award details are in the Annual Report.",
-    "category": "Company History",
-    "tags": [
-      "awards",
-      "recognition"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
-  },
-  {
     "id": "faq-80",
     "question": "Help me find information on ECIL",
     "answer": "I can help with ECIL company overview, history (founded 1967), business divisions (defence, nuclear, communications, EVM/VVPAT, antenna, smart card, smart meter, servo, broadcast, security products), HR & recruitment, internships and apprenticeships, contact details (HR email hrrect@ecil.co.in, Hyderabad phones 040-27182470 etc.), tenders / vendor registration, RTI and vigilance. Ask any specific question or pick a topic.",
@@ -1025,18 +828,6 @@
       "questions"
     ],
     "source_url": "https://www.ecil.co.in"
-  },
-  {
-    "id": "faq-82",
-    "question": "Tell me about ECIL projects and achievements",
-    "answer": "ECIL projects span defence (electronic warfare, secure communication, naval consoles), nuclear (NPCIL reactor regulation and protection, BARC radiation monitoring, nationwide environmental monitoring with AERB), elections (EVM and VVPAT for the Election Commission of India), security (container and baggage scanners for customs and airports), railways (AFC, signaling) and CSR. Key achievements include the indigenous TDC-12 computer, the first indigenous EVM and indigenous container scanners.",
-    "category": "Company History",
-    "tags": [
-      "projects",
-      "achievements",
-      "milestones"
-    ],
-    "source_url": "https://www.ecil.co.in/about-us"
   },
   {
     "id": "faq-84",

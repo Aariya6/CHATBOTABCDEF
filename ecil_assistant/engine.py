@@ -33,6 +33,7 @@ import sqlite3
 from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import Dict, List, Tuple
+from urllib.parse import urlparse, urlunparse
 
 import config
 import requests
@@ -49,6 +50,48 @@ def load_json_file(path, default):
             return json.load(handle)
     except (FileNotFoundError, json.JSONDecodeError):
         return default
+
+
+def _canonicalize_source_url(url: str) -> str:
+    if not url:
+        return ""
+    parsed = urlparse(url.strip())
+    site_host = urlparse(config.SITE_ROOT).netloc
+    if not parsed.scheme:
+        parsed = urlparse("https://" + url.strip())
+    if parsed.netloc.lower() == site_host:
+        parsed = parsed._replace(scheme="https", fragment="")
+        return urlunparse(parsed).rstrip("/")
+    return urlunparse(parsed).rstrip("/") if parsed.scheme else url.strip()
+
+
+def _normalize_documents(docs: List[dict]) -> List[dict]:
+    normalized: List[dict] = []
+    for doc in docs:
+        if not isinstance(doc, dict):
+            continue
+        source_url = doc.get("source_url")
+        if source_url:
+            doc["source_url"] = _canonicalize_source_url(source_url)
+        normalized.append(doc)
+    return normalized
+
+
+def _filter_invalid_sources(docs: List[dict]) -> List[dict]:
+    invalid_exact = {url.rstrip("/") for url in getattr(config, "INVALID_SOURCE_URLS", [])}
+    invalid_prefixes = [prefix.rstrip("/") for prefix in getattr(config, "INVALID_SOURCE_PREFIXES", [])]
+    if not invalid_exact and not invalid_prefixes:
+        return docs
+    filtered: List[dict] = []
+    for doc in docs:
+        source_url = (doc.get("source_url") or "").rstrip("/")
+        if not source_url:
+            filtered.append(doc)
+            continue
+        if source_url in invalid_exact or any(source_url.startswith(prefix) for prefix in invalid_prefixes):
+            continue
+        filtered.append(doc)
+    return filtered
 
 
 # ---------------------------------------------------------------------------
@@ -250,9 +293,9 @@ class KnowledgeEngine:
     """Search engine over the local KB + FAQ JSON stores."""
 
     # Weight used to blend bigram BM25 into the unigram score.
-    BIGRAM_WEIGHT = 0.65
+    BIGRAM_WEIGHT = 0.80
     # Cap so that field/phrase boosts can't dominate a low-relevance match.
-    BOOST_CAP = 4.0
+    BOOST_CAP = 6.0
 
     def __init__(self, knowledge_path=None, faq_path=None,
                  synonym_path=None, cache_db_path=None) -> None:
@@ -325,8 +368,9 @@ class KnowledgeEngine:
     # -- loading ------------------------------------------------------------
 
     def load_data(self) -> None:
-        self.documents = load_json_file(self.knowledge_path, [])
-        self.faq_documents = load_json_file(self.faq_path, [])
+        self.documents = _filter_invalid_sources(_normalize_documents(load_json_file(self.knowledge_path, [])))
+        self.faq_documents = _filter_invalid_sources(_normalize_documents(load_json_file(self.faq_path, [])))
+        self.faq_documents.extend(_filter_invalid_sources(_normalize_documents(getattr(config, "EXTRA_FAQ_ENTRIES", []))))
         self.doc_index = {d["id"]: d for d in self.documents}
         self.faq_doc_index = {d["id"]: d for d in self.faq_documents}
         self.categories = {d.get("category", "General") for d in self.documents}
@@ -444,12 +488,11 @@ class KnowledgeEngine:
                 overlap = q_content & title_words
                 if overlap:
                     coverage = len(overlap) / len(q_content)
-                    # Up to +2.5 when every content word is in the title.
-                    boost += 2.5 * coverage
-                    # Bonus when the title also doesn't contain extra
-                    # noise relative to the query (tight title match).
+                    # Stronger title weighting to prioritize tight matches.
+                    boost += 3.0 * coverage
+                    # Larger bonus for very tight title matches.
                     if len(overlap) == len(title_words):
-                        boost += 0.6
+                        boost += 1.0
         if any(t in tags_norm for t in q_set):
             boost += 0.4
         if any(t in keywords_norm for t in q_set):
@@ -460,31 +503,31 @@ class KnowledgeEngine:
         # Exact / near-exact phrase match.
         phrase = normalized_query.strip()
         if len(phrase) >= 8 and phrase in blob_norm:
-            boost += 1.0
+            boost += 1.2
         if len(phrase) >= 8 and phrase in title_norm:
-            boost += 1.6
+            boost += 2.0
 
         # Contiguous bigram match against title (very high precision).
         for i in range(len(raw_q_tokens) - 1):
             bg = f"{raw_q_tokens[i]} {raw_q_tokens[i + 1]}"
             if bg in title_norm:
-                boost += 0.6
+                boost += 0.9
             elif bg in blob_norm:
-                boost += 0.2
+                boost += 0.4
 
         # Intent-aligned category snaps.
         if intent == "contact_query" and cat in {"contact & support"}:
-            boost += 0.8
+            boost += 1.0
         if intent == "recruitment_query" and cat in {"recruitment", "hr information"}:
-            boost += 0.6
+            boost += 0.8
         if intent == "internship_query" and cat in {"internship information"}:
-            boost += 0.6
+            boost += 0.8
         if intent == "hr_query" and cat in {"hr information"}:
-            boost += 0.5
+            boost += 0.7
         if intent == "organization_overview" and cat in {"ecil overview", "company history"}:
-            boost += 0.5
+            boost += 0.7
         if intent == "faq_query" and cat in {"frequently asked questions"}:
-            boost += 0.6
+            boost += 0.8
 
         return min(boost, self.BOOST_CAP)
 
@@ -546,7 +589,7 @@ class KnowledgeEngine:
         # Merge: when the intent looks FAQ-shaped we give FAQ a small lift
         # so a direct Q&A wins over a paragraph-style doc; otherwise both
         # collections compete on raw BM25 score.
-        faq_boost = 0.6 if faq_should_lead else 0.0
+        faq_boost = 0.8 if faq_should_lead else 0.0
         merged: List[Tuple[float, dict]] = (
             [(s + faq_boost, d) for s, d in faq_scored] + list(kb_scored)
         )
@@ -617,8 +660,9 @@ class KnowledgeEngine:
             union = max(1, len(q_trigrams | t_trigrams))
             jacc = inter / union
             word_hits = sum(1 for w in q_words if w in blob)
-            # Scale into ~BM25 range; jacc 0.3 -> ~1.5, plus 0.5 per word hit
-            score = jacc * 5.0 + 0.5 * word_hits
+            # Scale into ~BM25 range; make fuzzy hits a bit more optimistic
+            # so tangential matches surface with clearer confidence.
+            score = jacc * 6.0 + 0.5 * word_hits
             if score <= 0:
                 continue
             doc = self.doc_index.get(doc_id) or self.faq_doc_index.get(doc_id)

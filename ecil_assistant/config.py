@@ -1,13 +1,15 @@
+import os
 import re
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SITE_ROOT = "https://www.ecil.co.in"
-DATA_FOLDER = "data"
-KNOWLEDGE_BASE_PATH = "data/knowledge_base.json"
-FAQ_BASE_PATH = "data/faq_base.json"
-PROCESSED_DOCS_PATH = "data/processed_docs.json"
-SYNONYM_MAP_PATH = "data/synonym_map.json"
-CACHE_DB_PATH = "cache/query_cache.db"
-LOG_FILE = "logs/app.log"
+DATA_FOLDER = os.path.join(BASE_DIR, "data")
+KNOWLEDGE_BASE_PATH = os.path.join(DATA_FOLDER, "knowledge_base.json")
+FAQ_BASE_PATH = os.path.join(DATA_FOLDER, "faq_base.json")
+PROCESSED_DOCS_PATH = os.path.join(DATA_FOLDER, "processed_docs.json")
+SYNONYM_MAP_PATH = os.path.join(DATA_FOLDER, "synonym_map.json")
+CACHE_DB_PATH = os.path.join(BASE_DIR, "cache", "query_cache.db")
+LOG_FILE = os.path.join(BASE_DIR, "logs", "app.log")
 
 USER_AGENT = "ECIL-Offline-Assistant/1.0 (+https://www.ecil.co.in)"
 REQUEST_TIMEOUT = 12
@@ -74,6 +76,8 @@ QUERY_NORMALIZATION = {
 FAQ_PRIORITIZATION_TERMS = [
     "internship",
     "intern",
+    "trainee",
+    "apprentice",
     "recruitment",
     "job",
     "jobs",
@@ -96,6 +100,12 @@ FAQ_PRIORITIZATION_TERMS = [
     "frequently asked",
     "question",
     "questions",
+    "department",
+    "ministry",
+    "organization",
+    "about",
+    "full form",
+    "acronym",
     # ENHANCED: Additional prioritization terms for expanded content
     "how",
     "what",
@@ -243,10 +253,41 @@ LOW_CONFIDENCE_THRESHOLD = 0.18
 # configured ECIL pages when local FAQ/KB cannot provide a confident answer.
 ENABLE_WEBSITE_FALLBACK = False
 FALLBACK_CONFIDENCE_THRESHOLD = 0.20
+INVALID_SOURCE_URLS = [
+    "https://www.ecil.co.in/about-us",
+    "http://www.ecil.co.in/about-us",
+    "https://www.ecil.co.in/about-us/",
+    "http://www.ecil.co.in/about-us/",
+]
+INVALID_SOURCE_PREFIXES = [
+    "https://www.ecil.co.in/about-us",
+    "http://www.ecil.co.in/about-us",
+]
+
+EXTRA_FAQ_ENTRIES = [
+    {
+        "id": "extra-faq-what-is-ecil",
+        "question": "What is ECIL?",
+        "answer": "ECIL stands for Electronics Corporation of India Limited. It is a Government of India public sector enterprise under the Department of Atomic Energy (DAE), headquartered in Hyderabad. ECIL designs and manufactures electronics systems for nuclear energy, defence, homeland security, communication, and election technology.",
+        "source_url": "https://www.ecil.co.in",
+    },
+    {
+        "id": "extra-faq-full-form-ecil",
+        "question": "What is the full form of ECIL?",
+        "answer": "ECIL is the acronym for Electronics Corporation of India Limited.",
+        "source_url": "https://www.ecil.co.in",
+    },
+    {
+        "id": "extra-faq-ecil-department",
+        "question": "Which department does ECIL come under?",
+        "answer": "ECIL operates under the Department of Atomic Energy (DAE), Government of India.",
+        "source_url": "https://www.ecil.co.in",
+    },
+]
+
 FALLBACK_URLS = [
     "https://www.ecil.co.in/careers",
     "https://www.ecil.co.in/contact-us",
-    "https://www.ecil.co.in/about-us",
     "https://www.ecil.co.in/divisions/defense",
     "https://www.ecil.co.in/tenders",
 ]
