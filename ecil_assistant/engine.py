@@ -531,6 +531,41 @@ class KnowledgeEngine:
 
         return min(boost, self.BOOST_CAP)
 
+    def _is_generic_doc(self, doc: dict) -> bool:
+        category = normalize_text(doc.get("category", ""))
+        title = normalize_text(doc.get("title") or doc.get("question") or "")
+        generic_categories = {
+            "ecil overview",
+            "company history",
+            "website navigation help",
+            "frequently asked questions",
+            "organizational structure",
+            "corporate governance",
+            "help",
+        }
+        if category in generic_categories:
+            return True
+        generic_title_signals = [
+            "help me find",
+            "help me",
+            "frequently asked",
+            "common faq",
+            "common faqs",
+            "information on ecil",
+            "help",
+        ]
+        if any(signal in title for signal in generic_title_signals):
+            return True
+        return False
+
+    def _query_contains_specific_election_terms(self, normalized_query: str) -> bool:
+        specific_terms = {
+            "evm", "vvpat", "electronic voting machine",
+            "voter verifiable paper audit trail", "ballot", "control unit",
+            "voting", "trail", "audit", "machine",
+        }
+        return any(term in normalized_query for term in specific_terms)
+
     def _score_collection(self, query_tokens: List[str], bigram_tokens: List[str],
                           normalized_query: str, uni_index: _BM25Index,
                           bi_index: _BM25Index, doc_lookup: Dict[str, dict],
@@ -549,6 +584,8 @@ class KnowledgeEngine:
             bi = bi_index.score(doc_id, bigram_tokens) if bigram_tokens else 0.0
             base = uni + self.BIGRAM_WEIGHT * bi
             boost = self._field_boost(doc, query_tokens, normalized_query, intent=intent)
+            if self._is_generic_doc(doc) and self._query_contains_specific_election_terms(normalized_query):
+                boost -= 1.4
             scored.append((base + boost, doc))
         scored.sort(key=lambda item: item[0], reverse=True)
         return scored
